@@ -14,6 +14,7 @@
 
 #include "global.h"
 #include "sample.h"
+#include <stdlib.h>
 
 void Histogram(tCommonHead &smp,ushort histo[], uchar &min, uchar &max)
 {
@@ -23,7 +24,7 @@ void Histogram(tCommonHead &smp,ushort histo[], uchar &min, uchar &max)
   uchar * data = smp.data;
   long len = smp.length;
 
-  bzero(histo,256*sizeof(ushort));
+  memset(histo,0,256*sizeof(ushort));
 
   while ( len-- )
   {
@@ -76,7 +77,7 @@ long SamplePacker(tCommonHead &sample,uchar **data)
     for(short j = times[i]; j ; --j)
       *pnibble++ = i;
 
-  bzero(pnibble,128);
+  memset(pnibble,0,128);
 
   if ( sample.stereo )
   {

@@ -19,11 +19,16 @@ typedef unsigned short ushort;
 typedef unsigned long  ulong;
 #endif
 
+#define MWPT       0x4d575054
+//'MWPT'
+#define TPWM       0x5450574d
+ //'TPWM'
+
 void error(char * s,char *s1);
 ulong depack(uchar *d,uchar *out,ulong length);
 
-long LoadFile(char *fn,uchar ** data);
-long SaveFile(char *fn,uchar * data,ulong len,uchar *head,ulong headlen);
+ulong LoadFile(char *fn,uchar ** data);
+ulong SaveFile(char *fn,uchar * data,ulong len,uchar *head,ulong headlen);
 ulong ReverseEndian(ulong d);
 
 ulong depack(uchar *in,uchar *out,ulong length)
@@ -84,14 +89,15 @@ int main(int argc,char **argv)
       exit(-1);
     }
 
-    if ( *(long *)inbuffer != 'MWPT' )
-    {
+    if ( *(long *)inbuffer == MWPT ){
+      outlen = ReverseEndian(*(long *)(inbuffer+4));
+    } else if ( *(long *)inbuffer == TPWM ){
+      outlen = *(long *)(inbuffer+4);
+    } else {
       free(inbuffer);
       printf("Wrong header !\n");
       exit(-1);
     }
-
-    outlen = ReverseEndian(*(long *)(inbuffer+4));
 
     outbuffer = (uchar *) malloc(outlen + 0x8000UL);
 

@@ -16,19 +16,20 @@ long LoadFile(char *fn,uchar **addr)
   FILE *handle;
   long len;
 
-  if ( (handle = fopen(fn,"rb")) == NULL){
+  if ( (handle = fopen(fn,"rb"))==NULL)
     return -1;
-  }
 
   fseek(handle,0L,SEEK_END);
   len = ftell(handle);
   fseek(handle,0L,SEEK_SET);
 
-  if ( (*addr = (uchar *)malloc(len+0x8200L)) == NULL) {
+  if ( (*addr = (uchar *)malloc(len+0x10200L))==NULL)
+  {
     fclose(handle);
     return -1;
   }
-  if ( len != (long)fread(*addr,sizeof(uchar),len,handle) ) {
+  if ( len != (long)fread(*addr,sizeof(uchar),len,handle) )
+  {
     fclose(handle);
     free(*addr);
     return -1;
@@ -46,12 +47,12 @@ long SaveFile(char *fn,uchar * addr,ulong len,uchar *head,ulong headlen)
   if ( (handle = fopen(fn,"wb")) == NULL)
     return -1;
 
-  if ( headlen ){
-    if ( headlen != fwrite(head,sizeof(uchar),headlen,handle) ) {
+  if ( headlen )
+    if ( headlen != fwrite(head,sizeof(uchar),headlen,handle) )
+    {
       fclose(handle);
       return -1;
     }
-  }
 
   len = fwrite(addr,sizeof(uchar),len,handle);
   fclose(handle);
