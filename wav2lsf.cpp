@@ -140,7 +140,7 @@ void SaveLsf(char *name,tCommonHead &sample,bool packed)
 }
 
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
   uchar * in,*out;
   long in_len;

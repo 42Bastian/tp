@@ -1,7 +1,3 @@
-/***************/
-/* TurboPacker */
-/***************/
-
 /* ported from 68k source by 42Bastian Schick
    (c) 68k version W.Mayer
    (c) C version 1997 42Bastian Schick
@@ -534,7 +530,7 @@ struct TPHEADER
   long unpacked;
 };
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   uchar * inbuffer;
   long inlen,outlen;
