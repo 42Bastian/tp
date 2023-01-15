@@ -1,10 +1,19 @@
 # makefile for TP (turbo packer)
 
+ifeq ($(OSTYPE),cygwin)
 CC = x86_64-w64-mingw32-g++
+else
+CC = g++
+endif
+
 CFLAGS = -O3 -fomit-frame-pointer -Wno-multichar
 LDFLAGS =
 RM = rm -f
-EXT = .exe
+ifeq ($(OSTYPE),cygwin)
+EXT =.exe
+else
+EXT=#
+endif
 
 EXECS = tp$(EXT) untp$(EXT) wav2lsf$(EXT)
 
@@ -13,7 +22,7 @@ all: $(EXECS)
 %.o: %.cpp
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-tp$(EXT): tp.o loadsave.o
+tp$(EXT): tp.o loadsave.o global.h
 	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) tp.o loadsave.o
 
 untp$(EXT): untp.o loadsave.o

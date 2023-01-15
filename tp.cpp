@@ -319,7 +319,7 @@ long InvPacker(uchar *in0,
           if ( ptable > in ){
             ptable = in;
           }
-          printf("%d %08x %08x\n",__LINE__,ptable,in);
+          //          printf("%d %08x %08x\n",__LINE__,ptable,in);
           CreatInvTable(table,ptable);
 
           ptr = ptable;
@@ -342,17 +342,17 @@ long InvPacker(uchar *in0,
           offset = ptable  - in_ptr - 0xfff;
         }
 
-        printf("off %d\n",offset);
+        //        printf("off %d\n",offset);
 #ifdef WORD_ALIGN_NEEDED
         offset1 = (*in_ptr<<8)|*(in_ptr-1); // fetch current word
 #else
         offset1 = *(ushort *)(in_ptr-1); // [1]
 #endif
-        printf("off1 %d\n",offset1);
+        //        printf("off1 %d\n",offset1);
 
         offset2 = table[offset1];
 
-        printf("off2 %d\n",offset2);
+        //        printf("off2 %d\n",offset2);
 
         for( offset2 = table[offset1];
              addrtab[offset2] < offset;
@@ -368,8 +368,8 @@ long InvPacker(uchar *in0,
         in_ptr -= 2;
 
         uchar d3 = *--in_ptr;
-        uchar bytecount,
-          max_count = 0;
+        int bytecount;
+        int max_count = 0;
         uchar * sqz_ptr;
 
         do{
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
 
         printf("Saved  : %s(%ld bytes)        \n",outfile,outlen+headlen);
       } else {
-        printf("in: %d, out %d\n",inlen, outlen);
+        printf("in: %ld, out %ld\n",inlen, outlen);
         printf("File skipped ! %20s\n"," ");
       }
     }
