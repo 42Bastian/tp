@@ -6,16 +6,16 @@
 
 typedef struct SCommonHead
   {
-    long length;
-    long frq;
-    short stereo;
-    uchar * data;
+    uint32_t length;
+    uint32_t frq;
+    uint16_t stereo;
+    uint8_t * data;
   } tCommonHead;
 
-void Histogram(tCommonHead &sample, ushort histo[], uchar &min, uchar &max);
+void Histogram(tCommonHead &sample, uint16_t histo[], uint8_t &min, uint8_t &max);
 void ShowHistogram(tCommonHead &sample);
-void ChangeVolume(tCommonHead &sample, ushort ratio);
+void ChangeVolume(tCommonHead &sample, uint16_t ratio);
 void Change2Signed(tCommonHead &sample);
-long SamplePacker(tCommonHead &sample, uchar ** packed);
+uint32_t SamplePacker(tCommonHead &sample, uint8_t ** packed);
 
 #endif

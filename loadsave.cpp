@@ -2,16 +2,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include "loadsave.h"
 
-#ifndef uchar
-typedef unsigned char  uchar;
-typedef unsigned short ushort;
-typedef unsigned long  ulong;
-#endif
 /* LoadFile opens a file,allocates memory and loads it completly */
 
-long LoadFile(char *fn,uchar **addr);
-long LoadFile(char *fn,uchar **addr)
+long LoadFile(char *fn,uint8_t **addr)
 {
   FILE *handle;
   long len;
@@ -23,12 +19,12 @@ long LoadFile(char *fn,uchar **addr)
   len = ftell(handle);
   fseek(handle,0L,SEEK_SET);
 
-  if ( (*addr = (uchar *)malloc(len+0x10200L))==NULL)
+  if ( (*addr = (uint8_t *)malloc(len+0x10200L))==NULL)
   {
     fclose(handle);
     return -1;
   }
-  if ( len != (long)fread(*addr,sizeof(uchar),len,handle) )
+  if ( len != (long)fread(*addr,sizeof(uint8_t),len,handle) )
   {
     fclose(handle);
     free(*addr);
@@ -39,8 +35,7 @@ long LoadFile(char *fn,uchar **addr)
 }
 
 /* SaveFile */
-long SaveFile(char *fn,uchar * addr,ulong len,uchar *head,ulong headlen);
-long SaveFile(char *fn,uchar * addr,ulong len,uchar *head,ulong headlen)
+long SaveFile(char *fn,uint8_t * addr,uint32_t len,uint8_t *head,uint32_t headlen)
 {
   FILE * handle;
 
@@ -48,13 +43,13 @@ long SaveFile(char *fn,uchar * addr,ulong len,uchar *head,ulong headlen)
     return -1;
 
   if ( headlen )
-    if ( headlen != fwrite(head,sizeof(uchar),headlen,handle) )
+    if ( headlen != fwrite(head,sizeof(uint8_t),headlen,handle) )
     {
       fclose(handle);
       return -1;
     }
 
-  len = fwrite(addr,sizeof(uchar),len,handle);
+  len = fwrite(addr,sizeof(uint8_t),len,handle);
   fclose(handle);
 
   return ( len );

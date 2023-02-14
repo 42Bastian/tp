@@ -7,34 +7,36 @@
 
 #include "global.h"
 #include "sample.h"
-void SampleDePacker(tCommonHead &sample,uchar *data);
+#include "loadsave.h"
+
+void SampleDePacker(tCommonHead &sample,uint8_t *data);
 
 struct SWavSmpHead
 {
   long Magic;       // 'fmt '
   long chunklen;    // without chunk-header : here 16
-  short weisnich;
-  short stereo;     // 1 = Mono 2 = Stereo
-  ulong playfrq;
-  ulong smplfrq;
-  short weisnich2;
-  short bps;        // 8 or 16
+  int16_t weisnich;
+  int16_t stereo;     // 1 = Mono 2 = Stereo
+  uint32_t playfrq;
+  uint32_t smplfrq;
+  int16_t weisnich2;
+  int16_t bps;        // 8 or 16
 };
 
 struct SLnxSmpHead
 {
-  uchar stereo;     // != 0 stereo
-  uchar length[2];  // NOTE : big endian
-  uchar reload;     // Timer reload : 1MHz/sample_frq - 1
-  uchar unpacked;   // != 1 unpacked data
+  uint8_t stereo;     // != 0 stereo
+  uint8_t length[2];  // NOTE : big endian
+  uint8_t reload;     // Timer reload : 1MHz/sample_frq - 1
+  uint8_t unpacked;   // != 1 unpacked data
 };
 
-ushort NoWave(uchar *in, long len);
+uint16_t NoWave(uint8_t *in, long len);
 void SaveLsf(char *name,tCommonHead &sample,bool packed);
 
 /* some helpers */
 void error(const char * s,const char *s1);
-ulong ReverseEndian(ulong d);
+uint32_t ReverseEndian(uint32_t d);
 
 //
 // do the nasty little/big-endian thing
@@ -48,12 +50,7 @@ ulong ReverseEndian(ulong d);
 #  define B22LE(a)   ReverseEndian(a)
 #endif
 
-/* loadsave.cc */
-long LoadFile(char *fn,uchar ** data);
-long SaveFile(char *fn,uchar * data,ulong len,uchar *head,ulong headlen);
-
-
-ushort NoWave(uchar *in, long len)
+uint16_t NoWave(uint8_t *in, long len)
 {
 
   if ( LE2BE(*(long *)in) != 'RIFF' )
@@ -61,7 +58,6 @@ ushort NoWave(uchar *in, long len)
 
   if ( BE2LE(*(long *)(in+4))+8 != len )
     return 1;
-
 
   if ( LE2BE(*(long *)(in+8)) != 'WAVE'  )
     return 1;
@@ -72,16 +68,16 @@ ushort NoWave(uchar *in, long len)
 
 tCommonHead WorkSample;
 
-void WaveToCommon(uchar *in,long len)
+void WaveToCommon(uint8_t *in,long len)
 {
   long skip;
-  uchar * help = in + 12; // pointer behind 'WAVE'
+  uint8_t * help = in + 12; // pointer behind 'WAVE'
 
   while ( LE2BE(*(long *)help) != 'data')
     help += 8 + BE2LE(*(long *)(help+4));
 
   long sample_len = BE2LE(*(long *)(help +4));
-  uchar *sample_data = help + 8;
+  uint8_t *sample_data = help + 8;
 
   help = in + 12;
 
@@ -99,13 +95,13 @@ void WaveToCommon(uchar *in,long len)
 void SaveLsf(char *name,tCommonHead &sample,bool packed)
 {
   struct SLnxSmpHead head;
-  uchar * d;
-  long l;
+  uint8_t * d;
+  uint32_t l;
 
   Change2Signed(sample);
 
-  head.stereo = (uchar)sample.stereo;
-  head.reload = (uchar) (1e6/sample.frq)-1;
+  head.stereo = (uint8_t)sample.stereo;
+  head.reload = (uint8_t) (1e6/sample.frq)-1;
 
   if ( packed ) {
     if ( (l = SamplePacker(sample,&d)) < 0 ){
@@ -113,12 +109,12 @@ void SaveLsf(char *name,tCommonHead &sample,bool packed)
     }
 
     tCommonHead s2;
-    s2.data = (uchar *)malloc( s2.length = (sample.length+1)>>1);
+    s2.data = (uint8_t *)malloc( s2.length = (sample.length+1)>>1);
 
     SampleDePacker(s2,d);
     l = sample.length;
-    uchar *ptr = s2.data;
-    uchar *ptr2= d = sample.data;
+    uint8_t *ptr = s2.data;
+    uint8_t *ptr2= d = sample.data;
 //    while ( l--)
 //    {
 //      *ptr2++ -= *ptr++;
@@ -130,25 +126,25 @@ void SaveLsf(char *name,tCommonHead &sample,bool packed)
     head.length[0] = (l>>8)& 0xff;
     head.length[1] = (l & 0xff);
     head.unpacked = 1;
-    SaveFile(name,d,l,(uchar *)&head,sizeof(struct SLnxSmpHead));
+    SaveFile(name,d,l,(uint8_t *)&head,sizeof(struct SLnxSmpHead));
   } else {
     head.length[0] = (sample.length>>8)& 0xff;
     head.length[1] = (sample.length & 0xff);
     head.unpacked = 1;
-    SaveFile(name,sample.data,sample.length,(uchar *)&head,sizeof(struct SLnxSmpHead));
+    SaveFile(name,sample.data,sample.length,(uint8_t *)&head,sizeof(struct SLnxSmpHead));
   }
 }
 
 
 int main(int argc,char **argv)
 {
-  uchar * in,*out;
+  uint8_t * in,*out;
   long in_len;
   char * in_name = 0;
   char * out_name = 0;
   bool packed = false;
   bool histo  = false;
-  short ratio = 0;
+  int16_t ratio = 0;
   int offset  = 0;
 
   if ( argc == 1 ){
@@ -247,7 +243,7 @@ int main(int argc,char **argv)
   free(in);
 }
 
-ulong ReverseEndian(register ulong d)
+uint32_t ReverseEndian(register uint32_t d)
 {
   return  ((d << 24) |
            ((d & 0x0000ff00) << 8) |

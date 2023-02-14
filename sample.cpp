@@ -16,15 +16,15 @@
 #include "sample.h"
 #include <stdlib.h>
 
-void Histogram(tCommonHead &smp,ushort histo[], uchar &min, uchar &max)
+void Histogram(tCommonHead &smp,uint16_t histo[], uint8_t &min, uint8_t &max)
 {
-  uchar _min = 255;
-  uchar _max = 0;
-  uchar c;
-  uchar * data = smp.data;
+  uint8_t _min = 255;
+  uint8_t _max = 0;
+  uint8_t c;
+  uint8_t * data = smp.data;
   long len = smp.length;
 
-  memset(histo,0,256*sizeof(ushort));
+  memset(histo,0,256*sizeof(uint16_t));
 
   while ( len-- )
   {
@@ -36,45 +36,45 @@ void Histogram(tCommonHead &smp,ushort histo[], uchar &min, uchar &max)
   max = _max;
 }
 
-void ChangeVolume(tCommonHead &smp, ushort ratio)
+void ChangeVolume(tCommonHead &smp, uint16_t ratio)
 {
-  uchar * data = smp.data;
+  uint8_t * data = smp.data;
   long len = smp.length;
 
   while ( len-- )
   {
-    ushort val = (*data)*ratio/100;
+    uint16_t val = (*data)*ratio/100;
     *data++ = val < 256 ? val : 255;
   }
 }
 
 void Change2Signed(tCommonHead &smp)
 {
-  uchar * data = smp.data;
+  uint8_t * data = smp.data;
   long len = smp.length;
 
   while ( len-- )
     *data++ ^= 0x80;
 }
 
-char power[]={ -128,-64,-32,-16,-8,-4,-2,-1,0,1,2,4,8,16,32,64};
-short times[]={ 128,  64, 32, 16, 8, 4, 2, 1,1,1,2,4,8,16,32,64};
-long SamplePacker(tCommonHead &sample,uchar **data)
+int8_t power[]={ -128,-64,-32,-16,-8,-4,-2,-1,0,1,2,4,8,16,32,64};
+int16_t times[]={ 128,  64, 32, 16, 8, 4, 2, 1,1,1,2,4,8,16,32,64};
+uint32_t SamplePacker(tCommonHead &sample,uint8_t **data)
 {
-  char last;
-  short delta;
-  uchar nibble1,nibble2;
-  uchar *ptr;
-  uchar *unpacked = sample.data;
-  long len = ((sample.length + 1) & 0xffffffe)/2;
+  int8_t last;
+  int16_t delta;
+  uint8_t nibble1,nibble2;
+  uint8_t *ptr;
+  uint8_t *unpacked = sample.data;
+  uint32_t len = ((sample.length + 1) & 0xffffffeUL)/2;
 
-  if ( (*data = ptr = (uchar *)malloc(len)) == 0)
+  if ( (*data = ptr = (uint8_t *)malloc(len)) == 0)
     return (-1);
 
-  uchar nibble_encode[256*2];
-  uchar * pnibble = nibble_encode;
-  for(short i = 0; i < 16; ++i)
-    for(short j = times[i]; j ; --j)
+  uint8_t nibble_encode[256*2];
+  uint8_t * pnibble = nibble_encode;
+  for(int16_t i = 0; i < 16; ++i)
+    for(int16_t j = times[i]; j ; --j)
       *pnibble++ = i;
 
   memset(pnibble,0,128);
@@ -89,13 +89,13 @@ long SamplePacker(tCommonHead &sample,uchar **data)
     long len2 = len;
     while ( len2-- )
     {
-      delta = ((short)*(char *)unpacked++) - (short)last;
+      delta = ((int16_t)*(int8_t *)unpacked++) - (int16_t)last;
       nibble1 = nibble_encode[delta+255];
-      last += (short)power[nibble1];
+      last += (int16_t)power[nibble1];
 
-      delta = ((short)*(char *)unpacked++) - (short)last;
+      delta = ((int16_t)*(int8_t *)unpacked++) - (int16_t)last;
       nibble2 = nibble_encode[delta+255];
-      last += (short)power[nibble2];
+      last += (int16_t)power[nibble2];
 
       *ptr++ = (nibble1<<4)|nibble2;
     }
@@ -103,35 +103,35 @@ long SamplePacker(tCommonHead &sample,uchar **data)
   return len;
 }
 
-void SampleDePacker(tCommonHead &sample,uchar *data)
+void SampleDePacker(tCommonHead &sample,uint8_t *data)
 {
-  uchar *ptr = sample.data;
+  uint8_t *ptr = sample.data;
   long len = (sample.length + 1)>>1;
-  char tmp =0;
-  uchar nibble;
+  int8_t tmp =0;
+  uint8_t nibble;
 
   while ( len -- ) {
     nibble = *data++;
     tmp += power[nibble>>4];
     *ptr++ = tmp;
     tmp += power[nibble & 0xf];
-    *ptr++ =(uchar) tmp;
+    *ptr++ =(uint8_t) tmp;
   }
 }
 /****************************************/
 
 void ShowHistogram(tCommonHead &sample)
 {
-  ushort histo[256];
-  ushort *phisto = histo;
-  uchar min,max;
+  uint16_t histo[256];
+  uint16_t *phisto = histo;
+  uint8_t min,max;
 
   Histogram( sample, histo, min, max);
 
   printf("\n Min : %3d  Max : %3d \n",min,max);
-  for ( short i = 16 ; i ; --i)
+  for ( int16_t i = 16 ; i ; --i)
   {
-    for ( short j = 16 ; j ; --j)
+    for ( int16_t j = 16 ; j ; --j)
     {
       printf("%4d ",*phisto++);
     }

@@ -21,10 +21,10 @@
 //#define  WORD_ALIGN_NEEDED
 
 void error(const char * s,const char *s1);
-void CreatTable(ushort * tab,uchar *ptr);
-long Packer(uchar *in,long length,ushort * table,ushort * addrtab,bool jump);
+void CreatTable(uint16_t * tab,uint8_t *ptr);
+long Packer(uint8_t *in,long length,uint16_t * table,uint16_t * addrtab,bool jump);
 void PrintPercentage(long packed,long unpacked,long done);
-ulong ReverseEndian(ulong d);
+uint32_t ReverseEndian(uint32_t d);
 
 //
 // do the nasty little/big-endian thing
@@ -45,21 +45,21 @@ ulong ReverseEndian(ulong d);
 #endif
 
 /* loadsave.cc */
-long LoadFile(char *fn,uchar ** data);
-long SaveFile(char *fn,uchar * data,ulong len,uchar *head,ulong headlen);
+long LoadFile(char *fn,uint8_t ** data);
+long SaveFile(char *fn,uint8_t * data,uint32_t len,uint8_t *head,uint32_t headlen);
 
 /* here is the beef ... */
-void CreatTable(register ushort * tab,uchar *ptr)
+void CreatTable(register uint16_t * tab,uint8_t *ptr)
 {
   int i;
-  memset((char *)tab,0,0x10001*sizeof(ushort));  // clear count-table
+  memset((char *)tab,0,0x10001*sizeof(uint16_t));  // clear count-table
 
   ++tab;
   for (i = 0; i < 0x8000 ; ++i) {
 #ifdef WORD_ALIGN_NEEDED
-    ++tab[(ushort)(*ptr<<8)|*++ptr];
+    ++tab[(uint16_t)(*ptr<<8)|*++ptr];
 #else
-    ++tab[*(ushort *)ptr]; ++ptr; //[1]
+    ++tab[*(uint16_t *)ptr]; ++ptr; //[1]
 #endif
   }
   --tab;
@@ -69,19 +69,19 @@ void CreatTable(register ushort * tab,uchar *ptr)
   }
 }
 
-long Packer(uchar *in0,
+long Packer(uint8_t *in0,
             long length,
             unsigned short * table,
             unsigned short * addrtab,
             bool jumptable)
 {
-  uchar * in,* in_ptr;
-  uchar * end_notpacked;
-  uchar * out_ptr;
-  uchar * ppackbyte;
-  uchar counter;
-  uchar * ptable = 0;             // force building of a new table
-  ushort offset,offset1,offset2;
+  uint8_t * in,* in_ptr;
+  uint8_t * end_notpacked;
+  uint8_t * out_ptr;
+  uint8_t * ppackbyte;
+  uint8_t counter;
+  uint8_t * ptable = 0;             // force building of a new table
+  uint16_t offset,offset1,offset2;
   int i;
 
   in = in_ptr = in0;
@@ -104,7 +104,7 @@ long Packer(uchar *in0,
       *ppackbyte <<= 1;
 
       if ( end_notpacked - in_ptr > 3)  {
-        uchar * save_in = in_ptr;
+        uint8_t * save_in = in_ptr;
 //
 // setup new hash(?) table
 //
@@ -116,13 +116,13 @@ long Packer(uchar *in0,
 
           CreatTable(table,ptable);
 
-          uchar * ptr = ptable;
+          uint8_t * ptr = ptable;
 
           for( i = 0; i < 0x8000U; ++i) {
 #ifdef WORD_ALIGN_NEEDED
             offset1 = (*ptr<<8)| *++ptr; // fetch word , make it offset
 #else
-            offset1 = *(ushort *)ptr; ++ptr; // [1]
+            offset1 = *(uint16_t *)ptr; ++ptr; // [1]
 #endif
             addrtab[table[offset1]]=i;
             ++table[offset1];
@@ -137,7 +137,7 @@ long Packer(uchar *in0,
 #ifdef WORD_ALIGN_NEEDED
         offset1 = (*in_ptr<<8)|*(in_ptr+1); // fetch current word
 #else
-        offset1 = *(ushort *)in_ptr; // [1]
+        offset1 = *(uint16_t *)in_ptr; // [1]
 #endif
         for( offset2 = table[offset1];
              addrtab[offset2] < offset;
@@ -151,13 +151,13 @@ long Packer(uchar *in0,
 
         in_ptr += 2;
 
-        uchar d3 = *in_ptr++;
-        uchar bytecount,
+        uint8_t d3 = *in_ptr++;
+        uint8_t bytecount,
           max_count = 0;
-        uchar * sqz_ptr;
+        uint8_t * sqz_ptr;
 
         do{
-          uchar * ptr;
+          uint8_t * ptr;
 //
 // we want at least a 3 byte sequence
 //
@@ -211,7 +211,7 @@ long Packer(uchar *in0,
           } else {
             *out_ptr++ = max_count | ((offset >> 4) & 0xf0);
           }
-          *out_ptr++ = (uchar) offset & 0xff;
+          *out_ptr++ = (uint8_t) offset & 0xff;
           continue;
         }
       }
@@ -221,7 +221,7 @@ long Packer(uchar *in0,
 //
 // overwrite already packed data to save space
 //
-    uchar * ptable2 = in_ptr - 0x1000;
+    uint8_t * ptable2 = in_ptr - 0x1000;
     long i;
 
     if ( (long long)ptable2 & 1) ++ptable2;
@@ -256,14 +256,16 @@ long Packer(uchar *in0,
   return (out_ptr-end_notpacked);
 }
 
-void CreatInvTable(ushort * tab,uchar *ptr)
+void CreatInvTable(uint16_t * tab,uint8_t *ptr)
 {
   int i;
-  memset((char *)tab,0,0x10001*sizeof(ushort));  // clear count-table
+  memset((char *)tab,0,0x10001*sizeof(uint16_t));  // clear count-table
 
   ++tab;
   for (i = 0; i < 0x8000 ; ++i) {
-    ++tab[(ushort)(*ptr<<8)|*--ptr];
+    uint16_t a = *ptr << 8;
+    a |=*--ptr;
+    ++tab[a];
   }
   --tab;
 
@@ -272,19 +274,19 @@ void CreatInvTable(ushort * tab,uchar *ptr)
   }
 }
 
-long InvPacker(uchar *in0,
+long InvPacker(uint8_t *in0,
                long length,
                unsigned short * table,
                unsigned short * addrtab,
                bool jumptable)
 {
-  uchar * in,* in_ptr;
-  uchar * end_notpacked;
-  uchar * out_ptr;
-  uchar * ppackbyte;
-  uchar counter;
-  uchar * ptable = 0;             // force building of a new table
-  ushort offset,offset1,offset2;
+  uint8_t * in,* in_ptr;
+  uint8_t * end_notpacked;
+  uint8_t * out_ptr;
+  uint8_t * ppackbyte;
+  uint8_t counter;
+  uint8_t * ptable = 0;             // force building of a new table
+  uint16_t offset,offset1,offset2;
   int i;
 
   out_ptr = in0 + length;
@@ -309,8 +311,8 @@ long InvPacker(uchar *in0,
       *ppackbyte <<= 1;
 
       if ( in_ptr - end_notpacked > 3)   {
-        uchar * save_in = in_ptr;
-        uchar * ptr;
+        uint8_t * save_in = in_ptr;
+        uint8_t * ptr;
 //
 // setup new hash(?) table
 //
@@ -328,7 +330,7 @@ long InvPacker(uchar *in0,
 #ifdef WORD_ALIGN_NEEDED
             offset1 = (*ptr<<8)| *--ptr; // fetch word , make it offset
 #else
-            --ptr; offset1 = *(ushort *)ptr; // [1]
+            --ptr; offset1 = *(uint16_t *)ptr; // [1]
 #endif
             addrtab[table[offset1]] = i;
             ++table[offset1];
@@ -346,7 +348,7 @@ long InvPacker(uchar *in0,
 #ifdef WORD_ALIGN_NEEDED
         offset1 = (*in_ptr<<8)|*(in_ptr-1); // fetch current word
 #else
-        offset1 = *(ushort *)(in_ptr-1); // [1]
+        offset1 = *(uint16_t *)(in_ptr-1); // [1]
 #endif
         //        printf("off1 %d\n",offset1);
 
@@ -367,13 +369,13 @@ long InvPacker(uchar *in0,
 
         in_ptr -= 2;
 
-        uchar d3 = *--in_ptr;
+        uint8_t d3 = *--in_ptr;
         int bytecount;
         int max_count = 0;
-        uchar * sqz_ptr;
+        uint8_t * sqz_ptr;
 
         do{
-          uchar * ptr;
+          uint8_t * ptr;
 //
 // we want at least a 3 byte sequence
 //
@@ -427,7 +429,7 @@ long InvPacker(uchar *in0,
           } else {
             *out_ptr++ = max_count | ((offset >> 4) & 0xf0);
           }
-          *out_ptr++ = (uchar) offset & 0xff;
+          *out_ptr++ = (uint8_t) offset & 0xff;
 
           continue;
         }
@@ -439,7 +441,7 @@ long InvPacker(uchar *in0,
 //
 // overwrite already packed data to save space
 //
-    uchar * ptable2 = in_ptr + 0x1000;
+    uint8_t * ptable2 = in_ptr + 0x1000;
     long i;
 
     if ( (long)ptable2 & 1) ++ptable2;
@@ -474,13 +476,13 @@ long InvPacker(uchar *in0,
 
 void PrintPercentage(long packedlen,long length,long done)
 {
-  static ushort packed = 1000;
-  static ushort ratio  = 1000;
+  static uint16_t packed = 1000;
+  static uint16_t ratio  = 1000;
 
   ++done;
 
-  ushort newpacked = (ushort) (done*100.0/length+0.5);
-  ushort newratio  = 100-(ushort)(packedlen*100.0/done+0.5);
+  uint16_t newpacked = (uint16_t) (done*100.0/length+0.5);
+  uint16_t newratio  = 100-(uint16_t)(packedlen*100.0/done+0.5);
 
   if ( newratio > 100 ) newratio = 0;
   if ( newpacked != packed || newratio != ratio)
@@ -507,9 +509,9 @@ struct HEADER
 {
 public:
 
-  void Check(uchar *data,long unpackedlen,bool little);
-  void Prepare(uchar *data,long packedlen,uchar **header,long *headlen);
-  void PrepareL(uchar *data,long packedlen,uchar **header,long *headlen);
+  void Check(uint8_t *data,long unpackedlen,bool little);
+  void Prepare(uint8_t *data,long packedlen,uint8_t **header,long *headlen);
+  void PrepareL(uint8_t *data,long packedlen,uint8_t **header,long *headlen);
 
 private:
 
@@ -520,33 +522,33 @@ private:
 
 struct LYNXHEADER
 {
-  ushort magic;
-  ushort unpacked;
+  uint16_t magic;
+  uint16_t unpacked;
 };
 
 struct TPHEADER
 {
-  ulong magic;
-  long unpacked;
+  uint32_t magic;
+  uint32_t unpacked;
 };
 
 int main(int argc, char *argv[])
 {
-  uchar * inbuffer;
+  uint8_t * inbuffer;
   long inlen,outlen;
   bool data = false;
   bool little = false;
   bool jumptable = false;
-  ushort * table;
-  ushort * addrtab;
+  uint16_t * table;
+  uint16_t * addrtab;
   char outfile[256];
   int inv = false;
 
   if (argc == 1)
     error("usage : tp {[(-|+)d] [(+|-)l] [(+|-)j]file [-o out]}","");
 
-  if ( (table   = (ushort *)malloc(0x10001L * sizeof(ushort))) == NULL ||
-       (addrtab = (ushort *)malloc(0x10000L * sizeof(ushort))) == NULL)
+  if ( (table   = (uint16_t *)malloc(0x10001L * sizeof(uint16_t))) == NULL ||
+       (addrtab = (uint16_t *)malloc(0x10000L * sizeof(uint16_t))) == NULL)
     error("Could not allocate memory for tables !","");
 
   --argc; ++argv; // skip command name
@@ -635,7 +637,7 @@ int main(int argc, char *argv[])
       }
       printf("\n");
       if ( (outlen) && outlen < inlen )  {
-        uchar * head;
+        uint8_t * head;
         long headlen;
 
         if ( data ) {
@@ -660,7 +662,7 @@ int main(int argc, char *argv[])
 }
 
 /*****************************************************************************/
-ulong ReverseEndian(register ulong d)
+uint32_t ReverseEndian(register uint32_t d)
 {
   return  ((d << 24) |
            ((d & 0x0000ff00) << 8) |
@@ -671,9 +673,9 @@ ulong ReverseEndian(register ulong d)
 //
 // check file-type and select header
 //
-void HEADER::Check(uchar *data,long unpackedlen, bool little)
+void HEADER::Check(uint8_t *data,long unpackedlen, bool little)
 {
-  if ( *(ushort *)data == BLL_MAGIC )
+  if ( *(uint16_t *)data == BLL_MAGIC )
   {
     pheader = malloc(size = sizeof(LYNXHEADER));
     ((LYNXHEADER *)pheader)->magic    = BLL_PACKED;
@@ -696,14 +698,14 @@ void HEADER::Check(uchar *data,long unpackedlen, bool little)
 // prepare the header for writing
 // not much now...
 //
-void HEADER::Prepare(uchar *data,long packed,uchar **header,long *headlen)
+void HEADER::Prepare(uint8_t *data,long packed,uint8_t **header,long *headlen)
 {
-  *header = (uchar *)pheader;
+  *header = (uint8_t *)pheader;
   *headlen = size;
 }
 
-void HEADER::PrepareL(uchar *data,long packed,uchar **header,long *headlen)
+void HEADER::PrepareL(uint8_t *data,long packed,uint8_t **header,long *headlen)
 {
-  *header = (uchar *)pheader;
+  *header = (uint8_t *)pheader;
   *headlen = LE2BE(size);
 }
